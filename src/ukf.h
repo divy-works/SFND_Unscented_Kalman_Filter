@@ -101,6 +101,8 @@ class UKF {
 
   Eigen::MatrixXd R_Lidar;
   Eigen::MatrixXd R_Radar;
+
+  double Normalize(double angle);
 };
 
 #endif  // UKF_H

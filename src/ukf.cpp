@@ -20,6 +20,9 @@ UKF::UKF() {
 
   // initial covariance matrix
   P_ = MatrixXd::Identity(5, 5);
+  P_(2, 2) = 0.5;
+  P_(3, 3) = 0.5;
+  P_(4, 4) = 0.5;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 1.5;
@@ -82,6 +85,13 @@ UKF::UKF() {
 }
 
 UKF::~UKF() {}
+
+double UKF::Normalize(double angle)
+{
+  while (angle > M_PI) angle -= 2*M_PI;
+  while (angle <-M_PI) angle += 2*M_PI;
+  return angle;
+}
 
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   /**
@@ -293,8 +303,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   for (int i = 0; i <= 2 * n_aug_; i++)
   {
     VectorXd z_diff = z_sigma_pred.col(i) - z_pred;
-    while (z_diff(1) > M_PI) z_diff(1) -= 2*M_PI;
-    while (z_diff(1) <-M_PI) z_diff(1) += 2*M_PI;
+    z_diff(1) = Normalize(z_diff(1));
 
     S = S + weights_(i) * z_diff * z_diff.transpose(); 
   }
@@ -305,20 +314,17 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   for (int i = 0; i <= 2 * n_aug_; i++)
   {
     VectorXd z_diff = z_sigma_pred.col(i) - z_pred;
-    while (z_diff(1) > M_PI) z_diff(1) -= 2*M_PI;
-    while (z_diff(1) <-M_PI) z_diff(1) += 2*M_PI;
+    z_diff(1) = Normalize(z_diff(1));
 
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
-    while (x_diff(3) > M_PI) x_diff(3) -= 2*M_PI;
-    while (x_diff(3) <-M_PI) x_diff(3) += 2*M_PI;
+    x_diff(3) = Normalize(x_diff(3));
 
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
   MatrixXd K = Tc * S.inverse();
   
   VectorXd z_diff = z - z_pred;
-  while (z_diff(1) > M_PI) z_diff(1) -= 2*M_PI;
-  while (z_diff(1) <-M_PI) z_diff(1) += 2*M_PI;
+  z_diff(1) = Normalize(z_diff(1));
 
   x_ = x_ + K * z_diff;
   P_ = P_ - K*S*K.transpose();
